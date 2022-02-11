@@ -1,6 +1,6 @@
 {
   "name": "m14-browser",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A promise controlled browser ideal for testing",
   "main": "Browser.js",
   "scripts": {
@@ -25,11 +25,11 @@
     "body-parser": "^1.18.3",
     "chai": "^4.2.0",
     "cookie-parser": "^1.4.3",
-    "dotenv": "^8.2.0",
+    "dotenv": "^16.0.0",
     "ejs": "^3.1.5",
     "express": "^4.16.4",
     "express-session": "^1.15.6",
-    "mocha": "^8.2.0",
+    "mocha": "^9.2.0",
     "morgan": "^1.9.1",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.5"
