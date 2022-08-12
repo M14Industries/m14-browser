@@ -1,14 +1,14 @@
 const Scripts = require('./lib/Scripts');
 const TwirlTimer = require('./lib/TwirlTimer');
 
-const M14BrowserPhantom = require("./browsers/M14BrowserPhantom");
+const NNLBrowserPuppeteer = require("./browsers/NNLBrowserPuppeteer");
 const M14BrowserRemoteControl = require("./browsers/M14BrowserRemoteControl");
 
 module.exports = function(args) {
 
 	let baseUrl = "http://localhost:3000";
 
-	let waitForRedirection = 100; // how long to wait for a redirection after a button or link has been clicked?
+	let waitForRedirection = 250; // how long to wait for a redirection after a button or link has been clicked?
 
 	if (process.env.M14BROWSER_WAITTIMEOUT) {
 		waitForRedirection = Number(process.env.M14BROWSER_WAITTIMEOUT);
@@ -51,20 +51,19 @@ module.exports = function(args) {
 		args: args
 	};
 
-	let m14BrowserDriver;
+	let browserDriver;
 	if (args && args.remoteControl) {
-		m14BrowserDriver = new M14BrowserRemoteControl(driverArgs);
+		browserDriver = new M14BrowserRemoteControl(driverArgs);
 	} else {
-		m14BrowserDriver = new M14BrowserPhantom(driverArgs);
+		browserDriver = new NNLBrowserPuppeteer(driverArgs);
 	}
 
-	var callbackWaiting;
-	var navigationRequested = false;
-	var redirectTimeout;
+	let callbackWaiting;
+	let navigationRequested = false;
+	let redirectTimeout;
+	let resources = [];
 
-	var resources = [];
-
-	var visit = function(url) {
+	const visit = function(url) {
 		log("visiting " + "\x1b[34m" + url);
 
 		return new Promise(async function(resolve, reject) {
@@ -74,23 +73,23 @@ module.exports = function(args) {
 				driverArgs.authentication = args.authentication;
 			}
 
-			await m14BrowserDriver.create(driverArgs);
+			await browserDriver.create(driverArgs);
 
-			var urlToOpen = url;
+			let urlToOpen = url;
 
 			if (url.indexOf("://") == -1) {
 				urlToOpen = baseUrl + url;
 			}
 
-			await m14BrowserDriver.open(urlToOpen);
+			await browserDriver.open(urlToOpen);
 
 		});
 	}
 
-	var waitForAjaxToFinish = function() {
+	const waitForAjaxToFinish = function() {
 		return new Promise(async function(resolve) {
 
-			var myInterval = setInterval(async function() {
+			const myInterval = setInterval(async function() {
 				if (await pendingAjax() === 0) {
 					clearInterval(myInterval);
 					TwirlTimer.stop();
@@ -103,9 +102,9 @@ module.exports = function(args) {
 
 	}
 
-	var reload = function() {
+	const reload = function() {
 		return new Promise(async function(resolve, reject) {
-			let url = await m14BrowserDriver.property("url");
+			let url = await browserDriver.property("url");
 			url = url.replace(baseUrl, "");
 			log("Reloading " + url);
 			await visit(url);
@@ -113,50 +112,50 @@ module.exports = function(args) {
 		});
 	}
 
-	var url = function() {
+	const url = function() {
 		return new Promise(async function(resolve, reject) {
-			const url = await m14BrowserDriver.property("url");
+			const url = await browserDriver.property("url");
 			resolve(url);
 		});
 	}
 
-	var fill = function(selector, value) {
+	const fill = function(selector, value) {
 		return new Promise(async function(resolve, reject) {
 
 			const script = await Scripts.fetch("fill", selector, value);
-			await m14BrowserDriver.evaluateJavaScript(script);
+			await browserDriver.evaluateJavaScript(script);
 			resolve();
 		});
 	}
 
-	var select = function(selector, value) {
+	const select = function(selector, value) {
 		return new Promise(async function(resolve, reject) {
 
 			const script = await Scripts.fetch("select", selector, value);
-			await m14BrowserDriver.evaluateJavaScript(script);
+			await browserDriver.evaluateJavaScript(script);
 			resolve();
 		});
 	}
 
-	var choose = function(selector, value) {
+	const choose = function(selector, value) {
 		return new Promise(async function(resolve, reject) {
 
 			const script = await Scripts.fetch("choose", selector, value);
-			await m14BrowserDriver.evaluateJavaScript(script);
+			await browserDriver.evaluateJavaScript(script);
 			resolve();
 		});
 	}
 
-	var uncheck = function(selector, value) {
+	const uncheck = function(selector, value) {
 		return new Promise(async function(resolve, reject) {
 
 			const script = await Scripts.fetch("uncheck", selector, value);
-			await m14BrowserDriver.evaluateJavaScript(script);
+			await browserDriver.evaluateJavaScript(script);
 			resolve();
 		});
 	}
 
-	var login = function(username, password) {
+	const login = function(username, password) {
 		return new Promise(async function(resolve, reject) {
 			await visit("/");
 			await fill('username', username);
@@ -173,22 +172,20 @@ module.exports = function(args) {
 		callbackWaiting to be called once the button has been pressed and the page reloads
 	*/
 
-	var pressButton = function(selector) {
+	const pressButton = function(selector) {
 		return activateElement("pressButton", selector);
 	}
 
-	var clickLink = function(selector) {
+	const clickLink = function(selector) {
 		return activateElement("clickLink", selector);
 	}
 
-	var activateElement = function(command, selector) {
+	const activateElement = function(command, selector) {
 		log(command + " '" + selector + "'");
 		return new Promise(async function(resolve, reject) {
 
-			callbackWaiting = resolve;
-
 			const script = await Scripts.fetch(command, selector);
-			await m14BrowserDriver.evaluateJavaScript(script);
+			await browserDriver.evaluateJavaScript(script);
 
 			debug("activateElement Finished clicking, now waiting");
 
@@ -199,8 +196,8 @@ module.exports = function(args) {
 
 			redirectTimeout = setTimeout(async () => {
 				debug("activateElement Finished waitForRedirection");
-				if (!navigationRequested && callbackWaiting) {
-					debug("activateElement !navigationRequested && callbackWaiting");
+				if (!navigationRequested) {
+					debug("activateElement !navigationRequested");
 
 					if (await pendingAjax() > 0) {
 						log(command + " (within activateElement) waiting for all pending ajax calls to complete '" + selector + "'");
@@ -210,30 +207,26 @@ module.exports = function(args) {
 					log(command + " complete (within activateElement) no navigationRequested '" + selector + "'");
 					debug("Callback from activateElement");
 
-					// if the active Element caused the page to reload, the callback may have been called by the onLoadFinish event
-					if (callbackWaiting) {
-						callbackWaiting();
-						callbackWaiting = false;
-					}
+					resolve();
 				}
 			}, waitForRedirection);
 		});
 	}
 
-	var pendingAjax = function() {
+	const pendingAjax = function() {
 		return new Promise(async (resolve) => {
 			const script = await Scripts.fetch("pendingjQueryAjax");
-			const pendingCount = await m14BrowserDriver.evaluateJavaScript(script);
+			const pendingCount = await browserDriver.evaluateJavaScript(script, true);
 			resolve(pendingCount);
 
 		});
 	}
 
-	var text = function(selector) {
+	const text = function(selector) {
 		return new Promise(async function(resolve, reject) {
 
 			const script = await Scripts.fetch("text", selector);
-			let text = await m14BrowserDriver.evaluateJavaScript(script);
+			let text = await browserDriver.evaluateJavaScript(script);
 
 			if (text) {
 				text = text.replace(/\r?\n|\r/g, " ").replace(/ +(?= )/g, '').replace(/\t/g, " ");;
@@ -242,11 +235,11 @@ module.exports = function(args) {
 		});
 	}
 
-	var html = function() {
+	const html = function() {
 		return new Promise(async function(resolve, reject) {
 
 			const script = await Scripts.fetch("html");
-			let html = await m14BrowserDriver.evaluateJavaScript(script);
+			let html = await browserDriver.evaluateJavaScript(script);
 
 			if (html) {
 				html = html.replace(/\r?\n|\r/g, " ").replace(/ +(?= )/g, '').replace(/\t/g, " ");;
@@ -256,26 +249,26 @@ module.exports = function(args) {
 		});
 	}
 
-	var runScript = function(script) {
+	const runScript = function(script) {
 		return new Promise(async function(resolve, reject) {
 
-			const results = await m14BrowserDriver.evaluateJavaScript("function(){ " + script + "}");
+			const results = await browserDriver.evaluateJavaScript("function(){ " + script + "}");
 			resolve(results);
 
 		});
 	}
 
-	var status = function() {
+	const status = function() {
 		return new Promise(function(resolve, reject) {
 			resolve(resources[resources.length - 1].status);
 		});
 	}
 
-	var query = function(selector) {
+	const query = function(selector) {
 		return new Promise(async function(resolve, reject) {
 
 			const script = await Scripts.fetch("query", selector);
-			const result = await m14BrowserDriver.evaluateJavaScript(script);
+			const result = await browserDriver.evaluateJavaScript(script);
 
 			if (result) {
 				return resolve(true);
@@ -285,13 +278,13 @@ module.exports = function(args) {
 		});
 	};
 
-	var screenShot = function(name) {
-		return m14BrowserDriver.screenshot(name);
+	const screenShot = function(name) {
+		return browserDriver.screenshot(name);
 	}
 
 	async function onLoadFinished(status) {
 		log("onLoadFinished", status);
-		let url = await m14BrowserDriver.property("url");
+		let url = await browserDriver.property("url");
 		log("done " + "\x1b[34m" + url);
 
 		redirectTimeout = setTimeout(async () => {
@@ -374,7 +367,7 @@ module.exports = function(args) {
 	};
 
 	function authentication(username, password) {
-		return m14BrowserDriver.authentication(username, password);
+		return browserDriver.authentication(username, password);
 	}
 
 	function debug(text) {

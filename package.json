@@ -1,6 +1,6 @@
 {
   "name": "m14-browser",
-  "version": "0.3.2",
+  "version": "1.0.0-beta.0",
   "description": "A promise controlled browser ideal for testing",
   "main": "Browser.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "testing"
   ],
   "dependencies": {
-    "phantom": "6.*"
+    "puppeteer": "^15.5.0"
   },
   "devDependencies": {
     "basic-auth": "^2.0.1",

@@ -6,20 +6,14 @@ The M14 Browser is a promise based browser built for testing websites and hybrid
 
 It can support multiple browsers with the same interface, allowing us to change the browser of choice or test multiple browsers without changing our code.
 
-The project is still undergoing frequent changes.
+The project is still undergoing frequent changes. The Puppeteer browser driver is taken from the Next New Line fork of this project.
 
 ### An easy to use headless browser, good for testing
 
-Currently two browsers are supported:
+Currently these browsers are supported:
 
-* [PhantomJS](https://www.npmjs.com/package/phantom) - a headless web browser (no longer in development)
+* [Puppeteer](https://pptr.dev/) - a headless chromium controller
 * [Remote control](#remote-control) - control any browser or webview in real-time
-
-Other browsers it'd be nice if we supported (but don't, yet)
-
-* Puppeteer - Headless Chrome
-* Selenium - Handy browser automation
-* Zombie.js - Similar to PhantomJS
 
 ## But why
 
