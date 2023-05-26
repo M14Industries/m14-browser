@@ -20,7 +20,9 @@ module.exports = function() {
 			basicAuthPassword = args.authentication.password;
 		}
 
-		browser = await puppeteer.launch({});
+		browser = await puppeteer.launch({
+			headless: "old"
+		});
 		page = await browser.newPage();
 
 		page.on("load", args.onLoadFinished);
