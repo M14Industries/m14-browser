@@ -63,7 +63,7 @@ module.exports = function(args) {
 	let redirectTimeout;
 	let resources = [];
 
-	const visit = function(url) {
+	const visit = function(url, forceReload = false) {
 		log("visiting " + "\x1b[34m" + url);
 
 		return new Promise(async function(resolve, reject) {
@@ -81,7 +81,7 @@ module.exports = function(args) {
 				urlToOpen = baseUrl + url;
 			}
 
-			await browserDriver.open(urlToOpen);
+			await browserDriver.open(urlToOpen, forceReload);
 
 		});
 	}
@@ -107,7 +107,7 @@ module.exports = function(args) {
 			let url = await browserDriver.property("url");
 			url = url.replace(baseUrl, "");
 			log("Reloading " + url);
-			await visit(url);
+			await visit(url, true);
 			resolve();
 		});
 	}

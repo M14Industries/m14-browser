@@ -5,7 +5,7 @@ module.exports = function() {
 
 	let browser, page;
 
-	let onResourceReceived;
+	let onResourceReceived, onLoadFinished;
 
 	let basicAuthUsername, basicAuthPassword;
 
@@ -28,19 +28,31 @@ module.exports = function() {
 		page.on("load", args.onLoadFinished);
 		page.on("onNavigationRequested", args.onNavigationRequested);
 		onResourceReceived = args.onResourceReceived;
+		onLoadFinished = args.onLoadFinished;
 
 		if (basicAuthUsername && basicAuthPassword) {
 			await page.authenticate({'username':basicAuthUsername, 'password': basicAuthPassword});
 		}
 	}
 
-	async function open(url) {
+	async function open(url, forceReload) {
 
-		const response = await page.goto(url);
+		let response;
+
+		// ForecReload always reloads the page. It's caused by the reload() API request.
+		if (forceReload) {
+			response = await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
+		} else {
+			response = await page.goto(url);
+		}
+
 		const resource = {
-			url: url,
-			status: response.status()
+			url: url
 		};
+
+		if (response && response !== null) {
+			resource.status = response.status();
+		}
 
 		onResourceReceived(resource);
 	}
