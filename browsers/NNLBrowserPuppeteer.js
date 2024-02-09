@@ -78,8 +78,19 @@ module.exports = function() {
 		}
 	}
 
-	function screenshot(name) {
-		console.log("Screenshots not currrently supported");
+	async function screenshot(name) {
+		if (!page) {
+			console.log("Error: No Page found, could not take screen shot");
+		}
+
+		const screenshotOptions = {
+			fullPage: true,
+			path: `./screenshots/${name}.png`
+		};
+
+		await page.screenshot(screenshotOptions);
+
+		console.log(`Screenshot captured: ${screenshotOptions.path}`);
 		return;
 	}
 
