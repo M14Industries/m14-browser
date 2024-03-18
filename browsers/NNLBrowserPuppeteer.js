@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
-module.exports = function() {
+module.exports = function () {
 
 	let browser, page;
 
@@ -10,7 +10,7 @@ module.exports = function() {
 	let basicAuthUsername, basicAuthPassword;
 
 	async function create(args) {
-		
+
 		if (page) {
 			return;
 		}
@@ -31,7 +31,7 @@ module.exports = function() {
 		onLoadFinished = args.onLoadFinished;
 
 		if (basicAuthUsername && basicAuthPassword) {
-			await page.authenticate({'username':basicAuthUsername, 'password': basicAuthPassword});
+			await page.authenticate({ 'username': basicAuthUsername, 'password': basicAuthPassword });
 		}
 	}
 
@@ -70,11 +70,11 @@ module.exports = function() {
 				}
 				const results = await page.evaluate(`(${script})()`);
 				return results;
-			} 
+			}
 
 			console.log(error);
 			return;
-		
+
 		}
 	}
 
@@ -85,6 +85,7 @@ module.exports = function() {
 
 		const screenshotOptions = {
 			fullPage: true,
+			captureBeyondViewport: false, // As we have fullPage (which changes the height) we set this to false to make the background act properly
 			path: `./screenshots/${name}.png`
 		};
 
@@ -99,13 +100,13 @@ module.exports = function() {
 			const url = await page.url();
 			return url;
 		}
-		
+
 		console.log("Property not found");
 	}
 
 	async function authentication(username, password) {
 		if (page) {
-			await page.authenticate({'username':username, 'password': password});
+			await page.authenticate({ 'username': username, 'password': password });
 		} else {
 			basicAuthUsername = username;
 			basicAuthPassword = password;
