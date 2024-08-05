@@ -37,18 +37,24 @@ module.exports = function () {
 
 	async function open(url, forceReload) {
 
-		let response;
+		let response = null;
+
+		const resource = {
+			url: url
+		};
 
 		// ForecReload always reloads the page. It's caused by the reload() API request.
 		if (forceReload) {
 			response = await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
 		} else {
-			response = await page.goto(url);
+			try {
+				response = await page.goto(url);
+			} catch (error) {
+				if (error.message.indexOf("ERR_INVALID_AUTH_CREDENTIALS") != -1) {
+					resource.status = 401;
+				}
+			}
 		}
-
-		const resource = {
-			url: url
-		};
 
 		if (response && response !== null) {
 			resource.status = response.status();
