@@ -20,9 +20,16 @@ module.exports = function () {
 			basicAuthPassword = args.authentication.password;
 		}
 
-		browser = await puppeteer.launch({
+		const launchOptions = {
 			headless: "old"
-		});
+		};
+
+		// Add no-sandbox flags when running in CI environments
+		if (process.env.CI === 'true' || process.env.PUPPETEER_ARGS) {
+			launchOptions.args = ['--no-sandbox', '--disable-setuid-sandbox'];
+		}
+
+		browser = await puppeteer.launch(launchOptions);
 		page = await browser.newPage();
 
 		page.on("load", args.onLoadFinished);
